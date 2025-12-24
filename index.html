@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 MedScan AI - Tıbbi Görüntü Analizi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🏥</span>
+                <h1>MedScan <span class="highlight">AI</span></h1>
+            </div>
+            <p class="tagline">Yapay Zeka Destekli Tıbbi Görüntü Analizi</p>
+        </header>
+
+        <main class="main-content">
+            <section class="upload-section glass-card">
+                <div class="patient-info-card">
+                    <h2>👤 Hasta Bilgileri</h2>
+                    <div class="patient-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="patientName">Hasta Adı</label>
+                                <input type="text" id="patientName" placeholder="Örn: Ahmet Y.">
+                            </div>
+                            <div class="form-group">
+                                <label for="patientId">Hasta ID / TC</label>
+                                <input type="text" id="patientId" placeholder="Örn: 12345678">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="examDate">Çekim Tarihi</label>
+                                <input type="date" id="examDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="referringDoctor">Yönlendiren Doktor</label>
+                                <input type="text" id="referringDoctor" placeholder="Örn: Dr. Mehmet K.">
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="complaint">Şikayet / Not</label>
+                            <textarea id="complaint" rows="2" placeholder="Örn: Bilek ağrısı, düşme sonrası"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="divider">
+
+                <h2>📤 Görüntü Yükle</h2>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">🩻</div>
+                    <p>Görüntüyü buraya sürükleyin</p>
+                    <span>veya</span>
+                    <label class="upload-btn">
+                        Dosya Seç
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </label>
+                    <p class="supported-formats">Desteklenen: JPG, PNG, BMP, TIFF</p>
+                </div>
+
+                <div class="preview-container" id="previewContainer" style="display: none;">
+                    <img id="previewImage" src="" alt="Önizleme">
+                    <button class="remove-btn" id="removeBtn">✕</button>
+                </div>
+
+                <div class="analysis-type">
+                    <h3>Analiz Türü</h3>
+                    <div class="type-buttons">
+                        <button class="type-btn active" data-type="auto">
+                            <span class="icon">🔍</span>
+                            <span>Otomatik</span>
+                        </button>
+                        <button class="type-btn" data-type="lung">
+                            <span class="icon">🫁</span>
+                            <span>Akciğer</span>
+                        </button>
+                        <button class="type-btn" data-type="brain">
+                            <span class="icon">🧠</span>
+                            <span>Beyin</span>
+                        </button>
+                        <button class="type-btn" data-type="bone">
+                            <span class="icon">🦴</span>
+                            <span>Kemik</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="analyze-btn" id="analyzeBtn" disabled>
+                    <span class="btn-icon">🔬</span>
+                    <span>Analizi Başlat</span>
+                </button>
+            </section>
+
+            <section class="results-section glass-card" id="resultsSection" style="display: none;">
+                <h2>📊 Analiz Sonuçları</h2>
+
+                <div class="patient-summary" id="patientSummary"></div>
+
+                <div class="score-container">
+                    <div class="score-ring" id="scoreRing">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="score-bg" cx="50" cy="50" r="45" />
+                            <circle class="score-progress" cx="50" cy="50" r="45" id="scoreProgress" />
+                        </svg>
+                        <div class="score-value" id="scoreValue">0</div>
+                    </div>
+                    <div class="score-label">Risk Skoru</div>
+                </div>
+
+                <div class="verdict" id="verdict"></div>
+
+                <div class="findings-container">
+                    <h3>🔎 Bulgular</h3>
+                    <ul class="findings-list" id="findingsList"></ul>
+                </div>
+
+                <div class="treatment-section" id="treatmentSection">
+                    <h3>💊 Önerilen Tedavi Planı</h3>
+                    <div class="treatment-diagnosis" id="treatmentDiagnosis"></div>
+
+                    <div class="treatment-grid">
+                        <div class="treatment-card medications-card">
+                            <h4>💉 İlaçlar</h4>
+                            <ul id="medicationsList"></ul>
+                        </div>
+
+                        <div class="treatment-card steps-card">
+                            <h4>🩹 Tedavi Süreci</h4>
+                            <ol id="treatmentSteps"></ol>
+                        </div>
+                    </div>
+
+                    <div class="recovery-time" id="recoveryTime"></div>
+
+                    <div class="treatment-warnings" id="treatmentWarnings">
+                        <h4>⚠️ Uyarılar</h4>
+                        <ul id="warningsList"></ul>
+                    </div>
+                </div>
+
+                <div class="comparison-section" id="comparisonSection">
+                    <h3>🔄 Karşılaştırma Modu</h3>
+                    <p class="comparison-hint">Önceki çekimle karşılaştırmak için görüntü yükleyin</p>
+                    <div class="comparison-upload">
+                        <label class="comparison-upload-btn">
+                            📤 Önceki Çekim Yükle
+                            <input type="file" id="comparisonFileInput" accept="image/*" hidden>
+                        </label>
+                    </div>
+                    <div class="comparison-container" id="comparisonContainer" style="display: none;">
+                        <div class="comparison-images">
+                            <div class="comparison-image-box">
+                                <span class="comparison-label">📅 Önceki Çekim</span>
+                                <img id="previousImage" src="" alt="Önceki">
+                                <div class="comparison-score" id="previousScore">Risk: -</div>
+                            </div>
+                            <div class="comparison-arrow">➡️</div>
+                            <div class="comparison-image-box">
+                                <span class="comparison-label">📅 Güncel Çekim</span>
+                                <img id="currentImage" src="" alt="Güncel">
+                                <div class="comparison-score" id="currentScore">Risk: -</div>
+                            </div>
+                        </div>
+                        <div class="comparison-result" id="comparisonResult"></div>
+                    </div>
+                </div>
+
+                <div class="analysis-images">
+                    <h3>🗺️ Analiz Haritaları</h3>
+
+                    <div class="image-tabs">
+                        <button class="tab-btn active" data-tab="overlay">Overlay</button>
+                        <button class="tab-btn" data-tab="heatmap">Isı Haritası</button>
+                        <button class="tab-btn" data-tab="marked">İşaretli</button>
+                    </div>
+                    <div class="image-display">
+                        <img id="analysisImage" src="" alt="Analiz">
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <h3>📤 Dışa Aktar</h3>
+                    <div class="export-buttons">
+                        <button class="export-btn pdf-btn" id="downloadPdfBtn">
+                            <span class="export-icon">📄</span>
+                            <span>PDF Rapor İndir</span>
+                        </button>
+                        <button class="export-btn email-btn" id="sendEmailBtn">
+                            <span class="export-icon">✉️</span>
+                            <span>E-posta Gönder</span>
+                        </button>
+                        <button class="export-btn print-btn" id="printBtn">
+                            <span class="export-icon">🖨️</span>
+                            <span>Yazdır</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p>Görüntü analiz ediliyor...</p>
+                <span class="loading-sub">Bu işlem birkaç saniye sürebilir</span>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="emailModal" style="display: none;">
+            <div class="modal-content glass-card">
+                <h2>✉️ Rapor Gönder</h2>
+                <div class="form-group">
+                    <label for="emailTo">Alıcı E-posta</label>
+                    <input type="email" id="emailTo" placeholder="doktor@hastane.com">
+                </div>
+                <div class="form-group">
+                    <label for="emailNote">Ek Not</label>
+                    <textarea id="emailNote" rows="3" placeholder="Doktora iletmek istediğiniz notlar..."></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel-btn" id="cancelEmailBtn">İptal</button>
+                    <button class="modal-btn send-btn" id="confirmEmailBtn">Gönder</button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>⚠️ Bu sistem sadece eğitim ve demo amaçlıdır. Gerçek tıbbi teşhis için mutlaka doktora başvurun.</p>
+        </footer>
+    </div>
+    <script>
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const removeBtn = document.getElementById('removeBtn');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const typeButtons = document.querySelectorAll('.type-btn');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+
+        let selectedFile = null;
+        let selectedType = 'auto';
+        let analysisImages = {};
+        let currentAnalysisData = null;
+
+       
+        document.getElementById('examDate').valueAsDate = new Date();
+
+  
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Lütfen bir görüntü dosyası seçin!');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                uploadArea.style.display = 'none';
+                previewContainer.style.display = 'block';
+                analyzeBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+      
+        removeBtn.addEventListener('click', () => {
+            selectedFile = null;
+            previewImage.src = '';
+            uploadArea.style.display = 'flex';
+            previewContainer.style.display = 'none';
+            analyzeBtn.disabled = true;
+            resultsSection.style.display = 'none';
+        });
+
+       
+        typeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedType = btn.dataset.type;
+            });
+        });
+
+        
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const tab = btn.dataset.tab;
+                if (analysisImages[tab]) {
+                    document.getElementById('analysisImage').src = 'data:image/png;base64,' + analysisImages[tab];
+                }
+            });
+        });
+
+    
+        function getPatientInfo() {
+            return {
+                name: document.getElementById('patientName').value || 'Belirtilmedi',
+                id: document.getElementById('patientId').value || 'Belirtilmedi',
+                date: document.getElementById('examDate').value || new Date().toISOString().split('T')[0],
+                doctor: document.getElementById('referringDoctor').value || 'Belirtilmedi',
+                complaint: document.getElementById('complaint').value || 'Belirtilmedi'
+            };
+        }
+
+        
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            loadingOverlay.style.display = 'flex';
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('type', selectedType);
+
+            const patientInfo = getPatientInfo();
+            formData.append('patient_name', patientInfo.name);
+            formData.append('patient_id', patientInfo.id);
+            formData.append('exam_date', patientInfo.date);
+            formData.append('doctor', patientInfo.doctor);
+            formData.append('complaint', patientInfo.complaint);
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentAnalysisData = data;
+                    displayResults(data);
+                } else {
+                    alert('Hata: ' + data.error);
+                }
+            } catch (error) {
+                alert('Bir hata oluştu: ' + error.message);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        });
+
+    
+        function displayResults(data) {
+            resultsSection.style.display = 'block';
+
+            const patientInfo = getPatientInfo();
+            const patientSummary = document.getElementById('patientSummary');
+            patientSummary.innerHTML = `
+                <div class="patient-badge">
+                    <span class="badge-icon">👤</span>
+                    <span class="badge-text">${patientInfo.name}</span>
+                </div>
+                <div class="patient-badge">
+                    <span class="badge-icon">🆔</span>
+                    <span class="badge-text">${patientInfo.id}</span>
+                </div>
+                <div class="patient-badge">
+                    <span class="badge-icon">📅</span>
+                    <span class="badge-text">${patientInfo.date}</span>
+                </div>
+                <div class="patient-badge complaint-badge">
+                    <span class="badge-icon">📋</span>
+                    <span class="badge-text">${patientInfo.complaint}</span>
+                </div>
+            `;
+
+            analysisImages = data.images;
+
+            const scoreValue = document.getElementById('scoreValue');
+            const scoreProgress = document.getElementById('scoreProgress');
+            const scoreRing = document.getElementById('scoreRing');
+
+            const colors = {
+                success: '#00d26a',
+                warning: '#ffc107',
+                danger: '#dc3545'
+            };
+            scoreRing.style.setProperty('--score-color', colors[data.severity] || colors.warning);
+
+            let currentScore = 0;
+            const targetScore = data.score;
+            const circumference = 2 * Math.PI * 45;
+
+            const animate = () => {
+                if (currentScore < targetScore) {
+                    currentScore += 1;
+                    scoreValue.textContent = Math.round(currentScore);
+                    const offset = circumference - (currentScore / 100) * circumference;
+                    scoreProgress.style.strokeDashoffset = offset;
+                    requestAnimationFrame(animate);
+                }
+            };
+
+            scoreProgress.style.strokeDasharray = circumference;
+            scoreProgress.style.strokeDashoffset = circumference;
+            animate();
+
+            const verdict = document.getElementById('verdict');
+            verdict.textContent = data.verdict;
+            verdict.className = 'verdict ' + data.severity;
+
+            const findingsList = document.getElementById('findingsList');
+            findingsList.innerHTML = '';
+            data.findings.forEach(finding => {
+                const li = document.createElement('li');
+                li.textContent = finding;
+                findingsList.appendChild(li);
+            });
+
+            if (data.treatment) {
+                displayTreatment(data.treatment);
+            }
+
+            document.getElementById('analysisImage').src = 'data:image/png;base64,' + data.images.overlay;
+            tabButtons[0].classList.add('active');
+
+            document.getElementById('currentImage').src = 'data:image/png;base64,' + data.images.marked;
+            document.getElementById('currentScore').textContent = 'Risk: ' + data.score;
+
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+       
+        function displayTreatment(treatment) {
+            document.getElementById('treatmentDiagnosis').innerHTML =
+                `<strong>🏥 Tanı:</strong> ${treatment.diagnosis}`;
+
+            const medicationsList = document.getElementById('medicationsList');
+            medicationsList.innerHTML = '';
+            if (treatment.medications && treatment.medications.length > 0) {
+                treatment.medications.forEach(med => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${med.name}</strong> <span class="med-type">(${med.type})</span><br>
+                                   <small>📋 ${med.dosage}</small>`;
+                    medicationsList.appendChild(li);
+                });
+            } else {
+                medicationsList.innerHTML = '<li>İlaç önerisi yok</li>';
+            }
+
+            const treatmentSteps = document.getElementById('treatmentSteps');
+            treatmentSteps.innerHTML = '';
+            treatment.treatment_steps.forEach(step => {
+                const li = document.createElement('li');
+                li.textContent = step;
+                treatmentSteps.appendChild(li);
+            });
+
+            document.getElementById('recoveryTime').innerHTML =
+                `<strong>⏱️ Tahmini İyileşme Süresi:</strong> ${treatment.recovery_time}`;
+
+            const warningsList = document.getElementById('warningsList');
+            warningsList.innerHTML = '';
+            treatment.warnings.forEach(warning => {
+                const li = document.createElement('li');
+                li.textContent = warning;
+                warningsList.appendChild(li);
+            });
+        }
+
+        let previousAnalysisData = null;
+
+        document.getElementById('comparisonFileInput').addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+
+                const comparisonResult = document.getElementById('comparisonResult');
+                comparisonResult.innerHTML = '⏳ Önceki çekim analiz ediliyor...';
+                comparisonResult.className = 'comparison-result';
+                document.getElementById('comparisonContainer').style.display = 'block';
+
+                reader.onload = async (event) => {
+                    document.getElementById('previousImage').src = event.target.result;
+
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    formData.append('type', selectedType);
+
+                    try {
+                        const response = await fetch('/analyze', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        if (data.success) {
+                            previousAnalysisData = data;
+                            document.getElementById('previousScore').textContent = 'Risk: ' + data.score;
+                            document.getElementById('previousImage').src = 'data:image/png;base64,' + data.images.marked;
+
+                            if (currentAnalysisData) {
+                                const previousScore = data.score;
+                                const currentScore = currentAnalysisData.score;
+                                const diff = currentScore - previousScore;
+
+                                if (diff < -10) {
+                                    comparisonResult.innerHTML = `<span class="improvement">📉 %${Math.abs(diff).toFixed(0)} İyileşme Tespit Edildi!</span><br><small>Önceki: ${previousScore} → Güncel: ${currentScore}</small>`;
+                                    comparisonResult.className = 'comparison-result success';
+                                } else if (diff > 10) {
+                                    comparisonResult.innerHTML = `<span class="worsening">📈 %${diff.toFixed(0)} Kötüleşme</span><br><small>Önceki: ${previousScore} → Güncel: ${currentScore}</small>`;
+                                    comparisonResult.className = 'comparison-result danger';
+                                } else {
+                                    comparisonResult.innerHTML = `<span class="stable">➡️ Durum Stabil</span><br><small>Önceki: ${previousScore} → Güncel: ${currentScore} (Fark: ${diff.toFixed(0)})</small>`;
+                                    comparisonResult.className = 'comparison-result warning';
+                                }
+                            } else {
+                                comparisonResult.innerHTML = '⚠️ Önce güncel görüntüyü analiz edin!';
+                                comparisonResult.className = 'comparison-result warning';
+                            }
+                        } else {
+                            comparisonResult.innerHTML = '❌ Analiz başarısız: ' + data.error;
+                            comparisonResult.className = 'comparison-result danger';
+                        }
+                    } catch (error) {
+                        comparisonResult.innerHTML = '❌ Hata oluştu!';
+                        comparisonResult.className = 'comparison-result danger';
+                    }
+                };
+
+                reader.readAsDataURL(file);
+                e.target.value = '';
+            }
+        });
+
+        
+        document.getElementById('downloadPdfBtn').addEventListener('click', async () => {
+            if (!currentAnalysisData) return;
+
+            const patientInfo = getPatientInfo();
+
+            const printContent = `
+                <html>
+                <head>
+                    <title>MedScan AI - Tıbbi Rapor</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; }
+                        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+                        .header h1 { color: #2563eb; margin: 0; }
+                        .patient-info { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                        .patient-info p { margin: 5px 0; }
+                        .results { margin: 20px 0; }
+                        .score { font-size: 48px; font-weight: bold; text-align: center; color: ${currentAnalysisData.severity === 'danger' ? '#dc3545' : currentAnalysisData.severity === 'warning' ? '#ffc107' : '#00d26a'}; }
+                        .verdict { text-align: center; font-size: 18px; padding: 10px; border-radius: 8px; background: #f0f0f0; }
+                        .findings { margin: 20px 0; }
+                        .findings li { margin: 8px 0; padding: 8px; background: #f9f9f9; border-left: 3px solid #2563eb; }
+                        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
+                        .image-container { text-align: center; margin: 20px 0; }
+                        .image-container img { max-width: 400px; border: 1px solid #ddd; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>🏥 MedScan AI</h1>
+                        <p>Tıbbi Görüntü Analiz Raporu</p>
+                    </div>
+                    
+                    <div class="patient-info">
+                        <h3>Hasta Bilgileri</h3>
+                        <p><strong>Hasta Adı:</strong> ${patientInfo.name}</p>
+                        <p><strong>Hasta ID:</strong> ${patientInfo.id}</p>
+                        <p><strong>Çekim Tarihi:</strong> ${patientInfo.date}</p>
+                        <p><strong>Yönlendiren:</strong> ${patientInfo.doctor}</p>
+                        <p><strong>Şikayet:</strong> ${patientInfo.complaint}</p>
+                    </div>
+                    
+                    <div class="results">
+                        <h3>Analiz Sonuçları</h3>
+                        <div class="score">${currentAnalysisData.score}</div>
+                        <p style="text-align:center">Risk Skoru (0-100)</p>
+                        <div class="verdict">${currentAnalysisData.verdict}</div>
+                    </div>
+                    
+                    <div class="findings">
+                        <h3>Bulgular</h3>
+                        <ul>
+                            ${currentAnalysisData.findings.map(f => `<li>${f}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="image-container">
+                        <h3>Analiz Görüntüsü</h3>
+                        <img src="data:image/png;base64,${analysisImages.marked}" alt="Analiz">
+                    </div>
+                    
+                    <div class="footer">
+                        <p>⚠️ Bu rapor sadece ön değerlendirme amaçlıdır.</p>
+                        <p>Kesin teşhis için uzman hekim değerlendirmesi gereklidir.</p>
+                        <p>Rapor Tarihi: ${new Date().toLocaleString('tr-TR')}</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.print();
+        });
+
+       
+        const emailModal = document.getElementById('emailModal');
+
+        document.getElementById('sendEmailBtn').addEventListener('click', () => {
+            emailModal.style.display = 'flex';
+        });
+
+        document.getElementById('cancelEmailBtn').addEventListener('click', () => {
+            emailModal.style.display = 'none';
+        });
+
+        document.getElementById('confirmEmailBtn').addEventListener('click', () => {
+            const email = document.getElementById('emailTo').value;
+            const note = document.getElementById('emailNote').value;
+
+            if (!email) {
+                alert('Lütfen e-posta adresi girin!');
+                return;
+            }
+
+            const patientInfo = getPatientInfo();
+            const subject = `MedScan AI Rapor - ${patientInfo.name} (${patientInfo.date})`;
+            const body = `Hasta: ${patientInfo.name}%0D%0AID: ${patientInfo.id}%0D%0ATarih: ${patientInfo.date}%0D%0AŞikayet: ${patientInfo.complaint}%0D%0A%0D%0ARisk Skoru: ${currentAnalysisData.score}%0D%0ASonuç: ${currentAnalysisData.verdict}%0D%0A%0D%0ANot: ${note}`;
+
+            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+            emailModal.style.display = 'none';
+        });
+
+        
+        document.getElementById('printBtn').addEventListener('click', () => {
+            document.getElementById('downloadPdfBtn').click();
+        });
+
+        
+        emailModal.addEventListener('click', (e) => {
+            if (e.target === emailModal) {
+                emailModal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+
+</html>
