@@ -4,7 +4,7 @@ Tıbbi görüntü analiz sistemi için web arayüzü.
 """
 
 from flask import Flask, render_template, request, jsonify, send_from_directory
-import os
+import os 
 import cv2
 import base64
 import numpy as np
