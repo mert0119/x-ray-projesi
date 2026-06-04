@@ -1,4 +1,4 @@
-"""
+""" 
 MedScan AI - Flask Web Sunucusu
 Tıbbi görüntü analiz sistemi için web arayüzü.
 """
